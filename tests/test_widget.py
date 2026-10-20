@@ -45,3 +45,12 @@ def test_invisible_buttons_let_clicks_through(qapp):
     assert w.btn_settings.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
     w._set_actions_opacity(1.0)
     assert not w.btn_settings.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+
+def test_selftest_reports_ok(qapp, tmp_path):
+    from glucowidget.selftest import run
+
+    report = tmp_path / "report.txt"
+    assert run(str(report), check_keyring=False) == 0
+    text = report.read_text(encoding="utf-8")
+    assert "RESULT OK" in text and "FAIL" not in text

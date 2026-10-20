@@ -524,8 +524,19 @@ def main() -> None:
     parser.add_argument("--screenshot", metavar="PNG", help=argparse.SUPPRESS)  # captura para revisão de design
     parser.add_argument("--theme", choices=("system", "dark", "light"), help=argparse.SUPPRESS)
     parser.add_argument("--lang", choices=("en", "pt"), help=argparse.SUPPRESS)
+    parser.add_argument("--selftest", metavar="REPORT", help=argparse.SUPPRESS)  # verificação do build
     parser.add_argument("--compact", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
+
+    # executável "windowed" (PyInstaller) não tem stdout/stderr: evita falhas ao imprimir/logar
+    for stream in ("stdout", "stderr"):
+        if getattr(sys, stream) is None:
+            setattr(sys, stream, open(os.devnull, "w"))
+
+    if args.selftest:
+        from glucowidget.selftest import run
+
+        sys.exit(run(args.selftest))
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.WARNING,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")

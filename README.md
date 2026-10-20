@@ -66,7 +66,17 @@ Options:
 .venv/bin/pyinstaller packaging/glucowidget.spec
 ```
 
-The result is in `dist/GlucoWidget` (Linux) or `dist\GlucoWidget.exe` (Windows). PyInstaller cannot cross-build: build the `.exe` on a Windows machine.
+The result is in `dist/GlucoWidget` (Linux) or `dist\GlucoWidget.exe` (Windows). PyInstaller cannot cross-build: build the `.exe` on a Windows machine. On Linux, PyInstaller also needs `binutils` (`sudo apt install binutils`).
+
+Check that a build bundled everything it needs (SVG plugin, translations, icons, keyring backend). It writes a report and exits with code 0 when everything is fine:
+
+```bash
+dist/GlucoWidget --selftest report.txt
+```
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs the tests on Linux and Windows for every push and pull request, then builds the executable on both systems, runs `--selftest` on it, and uploads the result as a downloadable artifact (Actions → latest run → Artifacts). On Windows it also checks that the Windows Credential Manager backend is the one in use.
 
 ## Font
 
