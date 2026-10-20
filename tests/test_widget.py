@@ -54,3 +54,29 @@ def test_selftest_reports_ok(qapp, tmp_path):
     assert run(str(report), check_keyring=False) == 0
     text = report.read_text(encoding="utf-8")
     assert "RESULT OK" in text and "FAIL" not in text
+
+
+def test_compact_mode_has_expand_button(qapp):
+    w = GlucoseWidget(Settings(onboarded=True, compact=True), DARK)
+    w.show_loading()
+    w.show_data(__import__("glucowidget.sources", fromlist=["DemoSource"]).DemoSource().fetch())
+    w.show()
+    qapp.processEvents()
+    assert w.settings.compact and w.btn_expand.isVisible()
+    # dentro do cartão, no canto superior direito
+    assert w.card.rect().contains(w.btn_expand.geometry())
+    # botão de fechar ao lado, sem sobreposição
+    assert w.btn_close_compact.isVisible() and w.card.rect().contains(w.btn_close_compact.geometry())
+    assert not w.btn_expand.geometry().intersects(w.btn_close_compact.geometry())
+    closed = []
+    w.request_hide.connect(lambda: closed.append(True))
+    w._set_actions_opacity(1.0)
+    w.btn_close_compact.click()
+    assert closed == [True] and w.settings.compact  # fechar não muda o modo
+    w._set_actions_opacity(1.0)
+    w.btn_expand.click()
+    qapp.processEvents()
+    assert not w.settings.compact and not w.btn_expand.isVisible() and not w.btn_close_compact.isVisible()
+    w.toggle_compact()
+    assert w.settings.compact and w.btn_expand.isVisible()
+    w.close()

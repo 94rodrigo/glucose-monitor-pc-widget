@@ -152,8 +152,16 @@ class GlucoseWidget(QWidget):
         self.btn_compact.clicked.connect(self.toggle_compact)
         self.btn_close.clicked.connect(self.request_hide)
         hl.addWidget(self.actions)
+        # no modo compacto o cabeçalho some; este botão fica no canto do cartão para voltar ao modo normal
+        self.btn_expand = IconButton("maximize", "", self.card)
+        self.btn_expand.clicked.connect(self.toggle_compact)
+        self.btn_expand.hide()
+        self.btn_close_compact = IconButton("close", "", self.card)
+        self.btn_close_compact.clicked.connect(self.request_hide)
+        self.btn_close_compact.hide()
         self._actions_opacity = 0.0
-        self._action_buttons = (self.btn_ai, self.btn_refresh, self.btn_settings, self.btn_compact, self.btn_close)
+        self._action_buttons = (self.btn_ai, self.btn_refresh, self.btn_settings, self.btn_compact,
+                                self.btn_close, self.btn_expand, self.btn_close_compact)
         self._set_actions_opacity(0.0)
         self.actions_anim = QPropertyAnimation(self, b"actionsOpacity", self)
         self.actions_anim.setDuration(160)
@@ -322,6 +330,13 @@ class GlucoseWidget(QWidget):
             self.card.setMinimumHeight(round(150 * s))
         else:
             self.card.setFixedSize(round(290 * s), round(196 * s))
+        size, gap, top = round(18 * s), round(2 * s), round(3 * s)
+        right = self.card.width() - round(5 * s)
+        for btn, x in ((self.btn_close_compact, right - size), (self.btn_expand, right - 2 * size - gap)):
+            btn.configure(pal.text_muted, hover_bg, size)
+            btn.setVisible(compact)
+            btn.move(x, top)
+            btn.raise_()
         self.adjustSize()
         self._render()
 
@@ -333,6 +348,8 @@ class GlucoseWidget(QWidget):
         self.btn_compact.set_label(tr("Expand (double-click)") if self.settings.compact
                                    else tr("Compact mode (double-click)"))
         self.btn_close.set_label(tr("Quit") if self.close_means_quit else tr("Hide (keeps running in the tray)"))
+        self.btn_expand.set_label(tr("Expand (double-click)"))
+        self.btn_close_compact.set_label(self.btn_close.toolTip())
 
     def set_ai_enabled(self, enabled: bool) -> None:
         self.ai_enabled = enabled
