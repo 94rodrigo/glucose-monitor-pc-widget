@@ -174,7 +174,15 @@ class IconButton(QAbstractButton):
         self._hover_bg = QColor(255, 255, 255, 20)
         self._hover = False
         self._size = 24
+        self._opacity = 1.0
         self.setFixedSize(self._size, self._size)
+
+    def set_opacity(self, value: float) -> None:
+        """Opacidade desenhada no próprio botão (QGraphicsOpacityEffect aninhado em outro efeito
+        deixa de renderizar o conteúdo quando chega a 1.0). Invisível = não captura cliques."""
+        self._opacity = max(0.0, min(1.0, value))
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, self._opacity < 0.05)
+        self.update()
 
     def set_label(self, text: str) -> None:
         self.setToolTip(text)
@@ -196,8 +204,11 @@ class IconButton(QAbstractButton):
         super().leaveEvent(e)
 
     def paintEvent(self, _):
+        if self._opacity <= 0:
+            return
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setOpacity(self._opacity)
         if self._hover or self.isDown():
             p.setPen(Qt.PenStyle.NoPen)
             p.setBrush(self._hover_bg)

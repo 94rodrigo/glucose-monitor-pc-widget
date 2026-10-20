@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from PySide6.QtCore import (
+    Property,
     QEasingCurve,
     QPoint,
     QPropertyAnimation,
@@ -16,7 +17,6 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QGuiApplication, QLinearGradient, QPainter, QPen
 from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
-    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QMenu,
@@ -152,10 +152,10 @@ class GlucoseWidget(QWidget):
         self.btn_compact.clicked.connect(self.toggle_compact)
         self.btn_close.clicked.connect(self.request_hide)
         hl.addWidget(self.actions)
-        self.actions_fx = QGraphicsOpacityEffect(self.actions)
-        self.actions_fx.setOpacity(0.0)
-        self.actions.setGraphicsEffect(self.actions_fx)
-        self.actions_anim = QPropertyAnimation(self.actions_fx, b"opacity", self)
+        self._actions_opacity = 0.0
+        self._action_buttons = (self.btn_ai, self.btn_refresh, self.btn_settings, self.btn_compact, self.btn_close)
+        self._set_actions_opacity(0.0)
+        self.actions_anim = QPropertyAnimation(self, b"actionsOpacity", self)
         self.actions_anim.setDuration(160)
         self.actions_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self.root.addWidget(self.header)
@@ -443,13 +443,23 @@ class GlucoseWidget(QWidget):
         self.apply_style(self.settings, self.pal)
         self.compact_toggled.emit(self.settings.compact)
 
+    def _get_actions_opacity(self) -> float:
+        return self._actions_opacity
+
+    def _set_actions_opacity(self, value: float) -> None:
+        self._actions_opacity = value
+        for b in self._action_buttons:
+            b.set_opacity(value)
+
+    actionsOpacity = Property(float, _get_actions_opacity, _set_actions_opacity)
+
     def _fade_actions(self, visible: bool) -> None:
         target = 1.0 if visible else 0.0
         if self.settings.reduce_motion:
-            self.actions_fx.setOpacity(target)
+            self._set_actions_opacity(target)
             return
         self.actions_anim.stop()
-        self.actions_anim.setStartValue(self.actions_fx.opacity())
+        self.actions_anim.setStartValue(self._actions_opacity)
         self.actions_anim.setEndValue(target)
         self.actions_anim.start()
 
