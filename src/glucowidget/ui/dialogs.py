@@ -36,7 +36,17 @@ from glucowidget.ui.pages import (
     StepDots,
 )
 from glucowidget.ui.theme import Palette, dialog_qss, rgba, with_alpha
+from glucowidget.ui.titlebar import install_titlebar, native_window_flags, use_custom_titlebar, window_flags
 from glucowidget.units import format_value
+
+
+def enable_min_max(dialog: QDialog) -> None:
+    """Faz o diálogo se comportar como uma janela normal (minimizar, maximizar, sem ficar por cima).
+
+    No Wayland a decoração do Qt não responde a esses botões; lá o diálogo fica sem moldura e
+    ganha uma barra de título própria (ver ``install_titlebar``).
+    """
+    dialog.setWindowFlags(window_flags() if use_custom_titlebar() else native_window_flags())
 
 
 def scrollable(widget: QWidget) -> QScrollArea:
@@ -67,6 +77,7 @@ class SettingsDialog(QDialog):
 
     def __init__(self, settings: Settings, palette: Palette, start_page: str = "", parent=None):
         super().__init__(parent)
+        enable_min_max(self)
         self.setWindowTitle(tr("Settings — {app}", app=APP_NAME))
         self.setStyleSheet(dialog_qss(palette))
         self.resize(820, 600)
@@ -75,6 +86,7 @@ class SettingsDialog(QDialog):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
+        install_titlebar(self, palette, root)
         body = QHBoxLayout()
         body.setSpacing(0)
         root.addLayout(body, 1)
@@ -141,6 +153,7 @@ class OnboardingDialog(QDialog):
 
     def __init__(self, settings: Settings, palette: Palette, parent=None):
         super().__init__(parent)
+        enable_min_max(self)
         self.setWindowTitle(tr("Welcome to {app}", app=APP_NAME))
         self.setStyleSheet(dialog_qss(palette))
         self.resize(640, 620)
@@ -150,6 +163,7 @@ class OnboardingDialog(QDialog):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
+        install_titlebar(self, palette, root)
 
         head = QWidget()
         hl = QVBoxLayout(head)
@@ -268,6 +282,7 @@ class AnalysisDialog(QDialog):
 
     def __init__(self, palette: Palette, parent=None):
         super().__init__(parent)
+        enable_min_max(self)
         self.pal = palette
         self.setWindowTitle(tr("AI analysis — {app}", app=APP_NAME))
         self.setStyleSheet(dialog_qss(palette))
@@ -276,6 +291,7 @@ class AnalysisDialog(QDialog):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
+        install_titlebar(self, palette, root)
         head = QWidget()
         hl = QVBoxLayout(head)
         hl.setContentsMargins(24, 22, 24, 12)

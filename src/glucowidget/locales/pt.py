@@ -242,6 +242,11 @@ CATALOG: dict[str, str] = {
         "dispositivo médico. Não tome decisões de tratamento com base apenas nele — confirme sempre no "
         "seu leitor/app oficial e converse com sua equipe de saúde."
     ),
+    # --- Barra de título
+    "Minimize": "Minimizar",
+    "Maximize": "Maximizar",
+    "Restore": "Restaurar",
+    "Close": "Fechar",
     # --- Widget
     "now": "agora",
     "{m} min ago": "há {m} min",

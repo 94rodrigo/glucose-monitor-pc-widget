@@ -18,6 +18,9 @@ _SVG = {
     "user_plus": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>',
     "alert": '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
     "drop": '<path d="M12 2.7s-6.5 7.2-6.5 11.8a6.5 6.5 0 0 0 13 0C18.5 9.9 12 2.7 12 2.7z"/>',
+    "win_min": '<path d="M5 12h14"/>',
+    "win_max": '<rect x="5" y="5" width="14" height="14" rx="2"/>',
+    "win_restore": '<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
     "check": '<path d="M20 6L9 17l-5-5"/>',
 }
 
