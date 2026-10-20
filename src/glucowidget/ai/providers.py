@@ -23,8 +23,8 @@ class ProviderInfo:
 PROVIDERS: dict[str, ProviderInfo] = {
     p.id: p
     for p in (
-        ProviderInfo("openai", "OpenAI", "openai", "https://api.openai.com/v1", "gpt-4o-mini",
-                     ("gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"),
+        ProviderInfo("openai", "OpenAI", "openai", "https://api.openai.com/v1", "gpt-6-luna",
+                     ("gpt-6-luna", "gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"),
                      key_url="https://platform.openai.com/api-keys"),
         ProviderInfo("anthropic", "Anthropic Claude", "anthropic", "https://api.anthropic.com/v1", "claude-sonnet-5-5",
                      ("claude-sonnet-5-5", "claude-haiku-5-5", "claude-opus-5-5"),

@@ -57,3 +57,15 @@ def test_errors_are_friendly():
         analyze("openai", "k", "m", "s", "u", transport=t)
     with pytest.raises(AIError, match="API key"):
         analyze("openai", "", "m", "s", "u")
+
+
+def test_openai_default_model():
+    from glucowidget.ai.providers import PROVIDERS
+
+    info = PROVIDERS["openai"]
+    assert info.default_model == "gpt-6-luna"
+    assert info.models[0] == info.default_model
+
+    t, seen = capture({"choices": [{"message": {"content": "ok"}}]})
+    assert analyze("openai", "k", "", "sys", "user", transport=t) == "ok"
+    assert seen["body"]["model"] == "gpt-6-luna"

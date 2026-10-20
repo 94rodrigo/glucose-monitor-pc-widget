@@ -141,7 +141,7 @@ GlucoWidget can send your recent readings to an AI model and show a written anal
 
 | Provider | Default model | Notes |
 | --- | --- | --- |
-| OpenAI | `gpt-4o-mini` | |
+| OpenAI | `gpt-6-luna` | |
 | Anthropic Claude | `claude-sonnet-5-5` | |
 | Google Gemini | `gemini-2.5-flash` | |
 | OpenRouter | `openai/gpt-4o-mini` | One key for many models |
