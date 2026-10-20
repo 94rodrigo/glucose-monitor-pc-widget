@@ -5,6 +5,7 @@ import argparse
 import copy
 import logging
 import os
+import signal
 import sys
 from PySide6.QtCore import QCoreApplication, QLibraryInfo, QObject, Qt, QTimer, QTranslator
 from PySide6.QtGui import QAction, QActionGroup, QGuiApplication
@@ -555,4 +556,13 @@ def main() -> None:
         QTimer.singleShot(1800, snap)
 
     app.aboutToQuit.connect(lambda: controller.save())
+
+    # Ctrl+C / SIGTERM: o Python só trata sinais quando executa bytecode, então um timer
+    # ocioso devolve o controle ao interpretador para o encerramento ser imediato.
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, lambda *_: app.quit())
+    wake = QTimer()
+    wake.start(200)
+    wake.timeout.connect(lambda: None)
+
     sys.exit(app.exec())
