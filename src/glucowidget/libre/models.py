@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import IntEnum
 
+from glucowidget.i18n import tr
+
 
 class Trend(IntEnum):
     UNKNOWN = 0
@@ -16,12 +18,12 @@ class Trend(IntEnum):
     @property
     def label(self) -> str:
         return {
-            Trend.FALLING_FAST: "caindo rápido",
-            Trend.FALLING: "caindo",
-            Trend.STABLE: "estável",
-            Trend.RISING: "subindo",
-            Trend.RISING_FAST: "subindo rápido",
-        }.get(self, "desconhecida")
+            Trend.FALLING_FAST: tr("falling fast"),
+            Trend.FALLING: tr("falling"),
+            Trend.STABLE: tr("steady"),
+            Trend.RISING: tr("rising"),
+            Trend.RISING_FAST: tr("rising fast"),
+        }.get(self, tr("unknown"))
 
     @property
     def arrow(self) -> str:

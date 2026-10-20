@@ -25,11 +25,11 @@ def test_unit_conversion_roundtrip():
 
 def test_format_value_and_delta():
     assert format_value(123.4, MGDL) == "123"
-    assert format_value(180, MMOL) == "10,0"
+    assert format_value(180, MMOL) == "10.0"
     assert format_delta(4, MGDL) == "+4"
     assert format_delta(-12, MGDL) == "−12"
     assert format_delta(0.2, MGDL) == "±0"
-    assert format_delta(9, MMOL) == "+0,5"
+    assert format_delta(9, MMOL) == "+0.5"
 
 
 def test_metrics():
@@ -70,9 +70,9 @@ def test_prompt_contains_readings_and_metrics():
     current = GlucoseReading(210, rs[-1].timestamp, Trend.RISING)
     data = GlucoseData(current=current, history=rs[:-1] + [current])
     text = build_user_prompt(data, MGDL, 70, 180, 3, now=NOW)
-    assert "Faixa-alvo: 70–180 mg/dL" in text
-    assert "tendência subindo" in text
-    assert "tempo no alvo 67%" in text
+    assert "Target range: 70–180 mg/dL" in text
+    assert "trend rising" in text
+    assert "time in range 67%" in text
     assert text.rstrip().splitlines()[-3].endswith(",210")
 
 

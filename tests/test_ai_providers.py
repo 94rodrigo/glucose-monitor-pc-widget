@@ -53,7 +53,7 @@ def test_custom_base_url_without_key():
 
 def test_errors_are_friendly():
     t, _ = capture({"error": {"message": "bad key"}}, status=401)
-    with pytest.raises(AIError, match="Chave de API inválida"):
+    with pytest.raises(AIError, match="Invalid API key"):
         analyze("openai", "k", "m", "s", "u", transport=t)
-    with pytest.raises(AIError, match="chave de API"):
+    with pytest.raises(AIError, match="API key"):
         analyze("openai", "", "m", "s", "u")

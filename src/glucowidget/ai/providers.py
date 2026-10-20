@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 import httpx
 
+from glucowidget.i18n import N_, tr
+
 
 @dataclass(frozen=True)
 class ProviderInfo:
@@ -39,7 +41,7 @@ PROVIDERS: dict[str, ProviderInfo] = {
         ProviderInfo("mistral", "Mistral", "openai", "https://api.mistral.ai/v1", "mistral-small-latest",
                      key_url="https://console.mistral.ai/api-keys"),
         ProviderInfo("ollama", "Ollama (local)", "openai", "http://localhost:11434/v1", "llama3.1", needs_key=False),
-        ProviderInfo("custom", "Outro (compatível com OpenAI)", "openai", "", "", needs_key=False),
+        ProviderInfo("custom", N_("Other (OpenAI-compatible)"), "openai", "", "", needs_key=False),
     )
 }
 
@@ -61,15 +63,15 @@ def _friendly_http_error(resp: httpx.Response) -> AIError:
         detail = resp.text[:200]
     code = resp.status_code
     if code in (401, 403):
-        msg = "Chave de API inválida ou sem permissão."
+        msg = tr("Invalid API key or missing permission.")
     elif code == 404:
-        msg = "Modelo ou endpoint não encontrado. Confira o nome do modelo."
+        msg = tr("Model or endpoint not found. Check the model name.")
     elif code == 429:
-        msg = "Limite de uso ou créditos esgotados no provedor."
+        msg = tr("Usage limit reached or credits exhausted at the provider.")
     elif code >= 500:
-        msg = "O provedor de IA está instável no momento."
+        msg = tr("The AI provider is unstable right now.")
     else:
-        msg = f"Erro do provedor (HTTP {code})."
+        msg = tr("Provider error (HTTP {code}).", code=code)
     return AIError(f"{msg}\n{detail}".strip())
 
 
@@ -85,15 +87,15 @@ def analyze(
 ) -> str:
     info = PROVIDERS.get(provider_id)
     if not info:
-        raise AIError("Provedor de IA desconhecido.")
+        raise AIError(tr("Unknown AI provider."))
     model = model or info.default_model
     base = (base_url or info.base_url).rstrip("/")
     if not base:
-        raise AIError("Informe a URL base do provedor.")
+        raise AIError(tr("Enter the provider's base URL."))
     if not model:
-        raise AIError("Informe o modelo.")
+        raise AIError(tr("Enter the model."))
     if info.needs_key and not api_key:
-        raise AIError("Informe a chave de API nas configurações.")
+        raise AIError(tr("Enter the API key in settings."))
 
     if info.kind == "anthropic":
         url = f"{base}/messages"
@@ -115,7 +117,7 @@ def analyze(
         with httpx.Client(transport=transport, timeout=timeout) as http:
             resp = http.post(url, headers=headers, json=body)
     except httpx.HTTPError as exc:
-        raise AIError(f"Falha de conexão com o provedor de IA: {exc}") from exc
+        raise AIError(tr("Connection to the AI provider failed: {error}", error=exc)) from exc
     if resp.status_code >= 400:
         raise _friendly_http_error(resp)
 
@@ -129,7 +131,7 @@ def analyze(
         else:
             text = data["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError, ValueError) as exc:
-        raise AIError("Resposta inesperada do provedor de IA.") from exc
+        raise AIError(tr("Unexpected response from the AI provider.")) from exc
     if not text.strip():
-        raise AIError("O provedor de IA retornou uma resposta vazia.")
+        raise AIError(tr("The AI provider returned an empty response."))
     return text.strip()

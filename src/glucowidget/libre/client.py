@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 import httpx
 
+from glucowidget.i18n import tr
 from glucowidget.libre.models import GlucoseData, GlucoseReading, Patient, Trend
 
 DEFAULT_HOST = "https://api.libreview.io"
@@ -128,15 +129,15 @@ class LibreLinkUpClient:
     @staticmethod
     def _check_http(resp: httpx.Response) -> dict:
         if resp.status_code == 429:
-            raise RateLimitError("Muitas requisições ao LibreLinkUp. Tentando novamente em instantes.")
+            raise RateLimitError(tr("Too many requests to LibreLinkUp. Retrying shortly."))
         if resp.status_code in (401, 403):
-            raise AuthError("Sessão expirada ou acesso negado pelo LibreLinkUp.")
+            raise AuthError(tr("Session expired or access denied by LibreLinkUp."))
         if resp.status_code >= 400:
-            raise LibreError(f"Erro do servidor LibreLinkUp (HTTP {resp.status_code}).")
+            raise LibreError(tr("LibreLinkUp server error (HTTP {code}).", code=resp.status_code))
         try:
             return resp.json()
         except ValueError as exc:
-            raise LibreError("Resposta inválida do LibreLinkUp.") from exc
+            raise LibreError(tr("Invalid response from LibreLinkUp.")) from exc
 
     # -- API -----------------------------------------------------------------
     def login(self) -> None:
@@ -156,16 +157,21 @@ class LibreLinkUpClient:
             if status == 4:
                 step = (data.get("step") or {}).get("type", "")
                 raise TermsError(
-                    "Abra o app LibreLinkUp no celular, entre com esta conta e conclua as "
-                    f"etapas pendentes (termos de uso / verificação{': ' + step if step else ''})."
+                    tr(
+                        "Open the LibreLinkUp app on your phone, sign in with this account and finish "
+                        "the pending steps (terms of use / verification{step}).",
+                        step=f": {step}" if step else "",
+                    )
                 )
             if status == 2 or not data.get("authTicket"):
                 message = (payload.get("error") or {}).get("message", "")
                 raise AuthError(
-                    "E-mail ou senha incorretos." if status == 2 else f"Falha no login: {message or 'resposta inesperada'}."
+                    tr("Incorrect email or password.")
+                    if status == 2
+                    else tr("Login failed: {message}.", message=message or tr("unexpected response"))
                 )
             if status not in (0, None):
-                raise LibreError(f"Falha no login (status {status}).")
+                raise LibreError(tr("Login failed (status {status}).", status=status))
 
             ticket = data["authTicket"]
             self._token = ticket["token"]
@@ -173,7 +179,7 @@ class LibreLinkUpClient:
             user_id = (data.get("user") or {}).get("id", "")
             self._account_id = hashlib.sha256(user_id.encode()).hexdigest() if user_id else None
             return
-        raise LibreError("Redirecionamentos de região em excesso.")
+        raise LibreError(tr("Too many region redirects."))
 
     def _authed_get(self, path: str) -> dict:
         if not self._token or time.time() > self._token_expires - 60:
@@ -191,7 +197,7 @@ class LibreLinkUpClient:
                 self.login()
                 continue
             return payload
-        raise AuthError("Não foi possível autenticar no LibreLinkUp.")
+        raise AuthError(tr("Could not authenticate with LibreLinkUp."))
 
     def connections(self) -> list[Patient]:
         payload = self._authed_get("/llu/connections")

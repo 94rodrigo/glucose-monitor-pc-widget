@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
+from glucowidget.i18n import tr
 from glucowidget.libre.models import GlucoseReading
 
 
@@ -19,12 +20,12 @@ class Level(Enum):
     @property
     def label(self) -> str:
         return {
-            Level.URGENT_LOW: "Muito baixo",
-            Level.LOW: "Baixo",
-            Level.IN_RANGE: "No alvo",
-            Level.HIGH: "Alto",
-            Level.URGENT_HIGH: "Muito alto",
-            Level.STALE: "Desatualizado",
+            Level.URGENT_LOW: tr("Very low"),
+            Level.LOW: tr("Low"),
+            Level.IN_RANGE: tr("In range"),
+            Level.HIGH: tr("High"),
+            Level.URGENT_HIGH: tr("Very high"),
+            Level.STALE: tr("Outdated"),
         }.get(self, "—")
 
     @property

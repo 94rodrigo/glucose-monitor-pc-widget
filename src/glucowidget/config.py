@@ -38,6 +38,7 @@ class Settings:
     stale_minutes: int = 15
 
     # Aparência
+    language: str = "en"  # en | pt
     theme: str = "system"  # system | dark | light
     always_on_top: bool = True
     hide_from_taskbar: bool = True
@@ -76,7 +77,7 @@ class Settings:
         except FileNotFoundError:
             return cls()
         except (OSError, ValueError) as exc:
-            log.warning("Configuração ilegível (%s); usando padrões.", exc)
+            log.warning("Unreadable settings (%s); using defaults.", exc)
             return cls()
         known = {f.name for f in fields(cls)}
         return cls(**{k: v for k, v in raw.items() if k in known})
@@ -113,7 +114,7 @@ def get_secret(name: str) -> str:
         if value is not None:
             return value
     except Exception as exc:  # backend indisponível
-        log.debug("keyring indisponível: %s", exc)
+        log.debug("keyring unavailable: %s", exc)
     return _fallback_load().get(name, "")
 
 
@@ -135,7 +136,7 @@ def set_secret(name: str, value: str) -> None:
             _fallback_save(data)
         return
     except Exception as exc:
-        log.warning("Cofre do sistema indisponível (%s); salvando em %s.", exc, FALLBACK_SECRETS_FILE)
+        log.warning("System keyring unavailable (%s); saving to %s.", exc, FALLBACK_SECRETS_FILE)
     data = _fallback_load()
     if value:
         data[name] = value

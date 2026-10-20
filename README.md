@@ -11,6 +11,7 @@ Widget de desktop (Windows e Linux) que mostra a glicemia do **FreeStyle Libre**
 - Cores com significado (baixo/alvo/alto/desatualizado) **e** rótulo textual — nunca só cor
 - Modo compacto (duplo clique), tamanho e opacidade ajustáveis
 - Unidade **mg/dL** (padrão) ou **mmol/L**
+- Interface em **inglês** (padrão) e **português (Brasil)** — troque em Settings → Appearance → Language (ou na primeira tela do assistente); as análises de IA também respondem no idioma escolhido
 - Ícone na bandeja mostrando o valor atual; notificações ao sair da faixa
 - Assistente de configuração no primeiro uso e modo demonstração
 - Análise por IA sob demanda (ou automática), com métricas locais: média, tempo no alvo, CV, GMI
@@ -86,6 +87,7 @@ A interface usa **Inter** se estiver instalada ou se você colocar os arquivos `
 ```
 src/glucowidget/
   app.py            controlador: polling, bandeja, alertas, IA
+  i18n.py, locales/ traduções (textos-fonte em inglês; catálogo em locales/pt.py)
   config.py         configurações (JSON) e segredos (keyring)
   libre/            cliente LibreLinkUp e modelos
   ai/               provedores de IA e prompt
@@ -94,3 +96,7 @@ src/glucowidget/
 ```
 
 Configurações ficam em `~/.config/glucowidget/` (Linux) ou `%LOCALAPPDATA%\glucowidget\` (Windows).
+
+## Traduções
+
+Os textos do código ficam em inglês e são marcados com `tr("...")` (ou `N_("...")` para constantes). Para adicionar ou alterar um idioma, edite `src/glucowidget/locales/pt.py`; o teste `tests/test_i18n.py` falha se algum texto ficar sem tradução ou com placeholders diferentes.

@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from glucowidget.config import Settings
+from glucowidget.i18n import tr
 from glucowidget.libre.models import GlucoseData
 from glucowidget.status import Level, reading_level
 from glucowidget.ui import icons
@@ -48,11 +49,11 @@ SHADOW_MARGIN = 16
 def age_text(minutes: float) -> str:
     m = int(max(0, minutes))
     if m < 1:
-        return "agora"
+        return tr("now")
     if m < 60:
-        return f"há {m} min"
+        return tr("{m} min ago", m=m)
     h, rest = divmod(m, 60)
-    return f"há {h} h {rest:02d}" if rest else f"há {h} h"
+    return tr("{h} h {m:02d} min ago", h=h, m=rest) if rest else tr("{h} h ago", h=h)
 
 
 class Card(QWidget):
@@ -107,6 +108,7 @@ class GlucoseWidget(QWidget):
         self._message_action = None
         self._hovered = False
         self._drag_offset: QPoint | None = None
+        self.close_means_quit = False  # sem bandeja, o botão de fechar encerra o app
 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setWindowTitle("GlucoWidget")
@@ -137,11 +139,11 @@ class GlucoseWidget(QWidget):
         al = QHBoxLayout(self.actions)
         al.setContentsMargins(0, 0, 0, 0)
         al.setSpacing(2)
-        self.btn_ai = IconButton("sparkles", "Analisar com IA")
-        self.btn_refresh = IconButton("refresh", "Atualizar agora")
-        self.btn_settings = IconButton("settings", "Configurações")
-        self.btn_compact = IconButton("minimize", "Modo compacto (duplo clique)")
-        self.btn_close = IconButton("close", "Ocultar (continua na bandeja)")
+        self.btn_ai = IconButton("sparkles", "")
+        self.btn_refresh = IconButton("refresh", "")
+        self.btn_settings = IconButton("settings", "")
+        self.btn_compact = IconButton("minimize", "")
+        self.btn_close = IconButton("close", "")
         for b in (self.btn_ai, self.btn_refresh, self.btn_settings, self.btn_compact, self.btn_close):
             al.addWidget(b)
         self.btn_ai.clicked.connect(self.request_analysis)
@@ -277,7 +279,7 @@ class GlucoseWidget(QWidget):
         for b in (self.btn_ai, self.btn_refresh, self.btn_settings, self.btn_compact, self.btn_close):
             b.configure(pal.text_muted, hover_bg, round(24 * s))
         self.btn_compact.icon_name = "maximize" if settings.compact else "minimize"
-        self.btn_compact.setToolTip("Expandir (duplo clique)" if settings.compact else "Modo compacto (duplo clique)")
+        self.retranslate()
         self.btn_ai.setVisible(self.ai_enabled)
         self.busy.set_color(pal.text_subtle)
 
@@ -313,13 +315,25 @@ class GlucoseWidget(QWidget):
         if compact:
             self.card.setFixedSize(round(178 * s), round(64 * s))
         elif self.stack.currentIndex() == self.PAGE_MESSAGE:
-            self.card.setFixedSize(round(290 * s), round(160 * s))
+            # altura acompanha o texto (mensagens variam de tamanho e de idioma)
+            self.card.setMinimumSize(0, 0)
+            self.card.setMaximumSize(16777215, 16777215)
+            self.card.setFixedWidth(round(290 * s))
+            self.card.setMinimumHeight(round(150 * s))
         else:
             self.card.setFixedSize(round(290 * s), round(196 * s))
         self.adjustSize()
         self._render()
 
     # -- conteúdo ------------------------------------------------------------------
+    def retranslate(self) -> None:
+        self.btn_ai.set_label(tr("Analyze with AI"))
+        self.btn_refresh.set_label(tr("Refresh now"))
+        self.btn_settings.set_label(tr("Settings"))
+        self.btn_compact.set_label(tr("Expand (double-click)") if self.settings.compact
+                                   else tr("Compact mode (double-click)"))
+        self.btn_close.set_label(tr("Quit") if self.close_means_quit else tr("Hide (keeps running in the tray)"))
+
     def set_ai_enabled(self, enabled: bool) -> None:
         self.ai_enabled = enabled
         self.btn_ai.setVisible(enabled)
@@ -354,9 +368,9 @@ class GlucoseWidget(QWidget):
         """Mantém a última leitura, sinalizando a falta de conexão."""
         if self.data is None:
             self.show_message(
-                "wifi_off", "Sem conexão",
-                "Não foi possível falar com o LibreLinkUp. Tentando novamente…",
-                "Tentar agora", self.request_refresh.emit,
+                "wifi_off", tr("No connection"),
+                tr("Couldn't reach LibreLinkUp. Retrying…"),
+                tr("Try now"), self.request_refresh.emit,
             )
         else:
             self.offline = True
@@ -398,7 +412,7 @@ class GlucoseWidget(QWidget):
         color = level_color(level, pal)
         if current is None:
             self.value_label.setText("—")
-            self.sub_label.setText("Sem leituras recentes")
+            self.sub_label.setText(tr("No recent readings"))
             return
 
         if self.num_anim.state() != QVariantAnimation.State.Running:
@@ -414,7 +428,7 @@ class GlucoseWidget(QWidget):
         if delta is not None and level != Level.STALE:
             parts.append(f"{format_delta(delta, st.unit)} {st.unit}")
         if self.offline:
-            parts.insert(0, "Sem conexão")
+            parts.insert(0, tr("Offline"))
         self.sub_label.setText("  ·  ".join(parts))
 
         self.spark.set_data(self.data.history, st.chart_hours, st.target_low, st.target_high,

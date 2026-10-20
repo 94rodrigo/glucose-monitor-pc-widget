@@ -87,7 +87,7 @@ def test_bad_credentials():
     client, _ = make_client({
         ("POST", "api.libreview.io", "/llu/auth/login"): {"status": 2, "error": {"message": "notAuthenticated"}},
     })
-    with pytest.raises(AuthError, match="incorretos"):
+    with pytest.raises(AuthError, match="Incorrect email or password"):
         client.login()
 
 

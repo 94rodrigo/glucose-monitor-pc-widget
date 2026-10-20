@@ -48,7 +48,7 @@ def set_autostart(enabled: bool) -> None:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(
                     "[Desktop Entry]\nType=Application\n"
-                    f"Name={APP_NAME}\nComment=Glicemia do FreeStyle Libre em tempo real\n"
+                    f"Name={APP_NAME}\nComment=Real-time FreeStyle Libre glucose\n"
                     f"Exec={shlex.join(launch_command())}\n"
                     "X-GNOME-Autostart-enabled=true\nTerminal=false\n",
                     encoding="utf-8",
@@ -56,4 +56,4 @@ def set_autostart(enabled: bool) -> None:
             elif path.exists():
                 path.unlink()
     except OSError as exc:
-        log.warning("Não foi possível configurar a inicialização automática: %s", exc)
+        log.warning("Could not configure autostart: %s", exc)

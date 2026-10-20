@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from glucowidget.i18n import tr
 from glucowidget.libre.models import Trend
 from glucowidget.status import Level
 from glucowidget.ui import icons
@@ -73,7 +74,7 @@ class TrendIcon(QWidget):
         target = float(self._ANGLES.get(trend, 0))
         changed = trend != self._trend
         self._trend = trend
-        self.setToolTip(f"Tendência: {trend.label}")
+        self.setToolTip(tr("Trend: {trend}", trend=trend.label))
         if changed and self.animate and self.isVisible():
             self._anim.stop()
             self._anim.setStartValue(self._angle)
@@ -174,6 +175,10 @@ class IconButton(QAbstractButton):
         self._hover = False
         self._size = 24
         self.setFixedSize(self._size, self._size)
+
+    def set_label(self, text: str) -> None:
+        self.setToolTip(text)
+        self.setAccessibleName(text)
 
     def configure(self, color: QColor, hover_bg: QColor, size: int) -> None:
         self._color, self._hover_bg, self._size = QColor(color), QColor(hover_bg), size

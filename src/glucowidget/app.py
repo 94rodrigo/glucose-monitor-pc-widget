@@ -6,16 +6,17 @@ import copy
 import logging
 import os
 import sys
-from PySide6.QtCore import QObject, Qt, QTimer
+from PySide6.QtCore import QCoreApplication, QLibraryInfo, QObject, Qt, QTimer, QTranslator
 from PySide6.QtGui import QAction, QActionGroup, QGuiApplication
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from glucowidget import APP_ID, APP_NAME
 from glucowidget import metrics as metrics_mod
-from glucowidget.ai.prompt import SYSTEM_PROMPT, build_user_prompt
+from glucowidget.ai.prompt import build_user_prompt, system_prompt
 from glucowidget.ai.providers import PROVIDERS, analyze
 from glucowidget.autostart import set_autostart
 from glucowidget.config import LIBRE_PASSWORD, Settings, ai_key_name, get_secret
+from glucowidget.i18n import get_language, set_language, tr
 from glucowidget.libre.models import GlucoseData
 from glucowidget.sources import DemoSource, LibreSource, SetupRequired, classify_error
 from glucowidget.status import Level
@@ -36,6 +37,9 @@ MAX_BACKOFF_SECONDS = 600
 class Controller(QObject):
     def __init__(self, settings: Settings, demo: str | None = None, persist: bool = True):
         super().__init__()
+        set_language(settings.language)
+        self._qt_translator: QTranslator | None = None
+        self._install_qt_translator()
         self.settings = settings
         self.demo = demo
         self.persist = persist
@@ -69,7 +73,8 @@ class Controller(QObject):
             self.tray.messageClicked.connect(self._on_tray_message)
             self.tray.show()
         else:
-            self.widget.btn_close.setToolTip("Sair")
+            self.widget.close_means_quit = True
+            self.widget.retranslate()
 
         self.poll_timer = QTimer(self)
         self.poll_timer.setSingleShot(True)
@@ -108,23 +113,23 @@ class Controller(QObject):
         self.act_header.setEnabled(False)
         menu.addAction(self.act_header)
         menu.addSeparator()
-        self.act_toggle = QAction("Ocultar widget", menu)
+        self.act_toggle = QAction(tr("Hide widget"), menu)
         self.act_toggle.triggered.connect(self.toggle_widget)
         menu.addAction(self.act_toggle)
-        act_refresh = QAction("Atualizar agora", menu)
+        act_refresh = QAction(tr("Refresh now"), menu)
         act_refresh.triggered.connect(self.refresh_now)
         menu.addAction(act_refresh)
-        self.act_ai = QAction("Analisar com IA…", menu)
+        self.act_ai = QAction(tr("Analyze with AI…"), menu)
         self.act_ai.triggered.connect(self.open_analysis)
         menu.addAction(self.act_ai)
         menu.addSeparator()
-        self.act_compact = QAction("Modo compacto", menu, checkable=True)
+        self.act_compact = QAction(tr("Compact mode"), menu, checkable=True)
         self.act_compact.triggered.connect(lambda: self.widget.toggle_compact())
         menu.addAction(self.act_compact)
-        self.act_on_top = QAction("Sempre visível", menu, checkable=True)
+        self.act_on_top = QAction(tr("Always on top"), menu, checkable=True)
         self.act_on_top.triggered.connect(self._toggle_on_top)
         menu.addAction(self.act_on_top)
-        unit_menu = menu.addMenu("Unidade")
+        unit_menu = menu.addMenu(tr("Unit"))
         self.unit_group = QActionGroup(menu)
         for unit in ("mg/dL", "mmol/L"):
             a = QAction(unit, unit_menu, checkable=True)
@@ -132,11 +137,11 @@ class Controller(QObject):
             self.unit_group.addAction(a)
             unit_menu.addAction(a)
         menu.addSeparator()
-        act_settings = QAction("Configurações…", menu)
+        act_settings = QAction(tr("Settings…"), menu)
         act_settings.triggered.connect(lambda: self.open_settings())
         menu.addAction(act_settings)
         menu.addSeparator()
-        act_quit = QAction("Sair", menu)
+        act_quit = QAction(tr("Quit"), menu)
         act_quit.triggered.connect(QApplication.quit)
         menu.addAction(act_quit)
         menu.aboutToShow.connect(self._sync_menu)
@@ -144,7 +149,7 @@ class Controller(QObject):
         return menu
 
     def _sync_menu(self) -> None:
-        self.act_toggle.setText("Ocultar widget" if self.widget.isVisible() else "Mostrar widget")
+        self.act_toggle.setText(tr("Hide widget") if self.widget.isVisible() else tr("Show widget"))
         self.act_compact.setChecked(self.settings.compact)
         self.act_on_top.setChecked(self.settings.always_on_top)
         self.act_ai.setVisible(self.settings.ai_enabled)
@@ -156,6 +161,27 @@ class Controller(QObject):
                 f"{format_value(c.value_mgdl, self.settings.unit)} {self.settings.unit} {c.trend.arrow}  ·  "
                 f"{age_text(c.age_minutes())}"
             )
+
+    def _install_qt_translator(self) -> None:
+        """Traduz os textos nativos do Qt (menu de copiar/colar, botões padrão)."""
+        app = QCoreApplication.instance()
+        if self._qt_translator is not None:
+            app.removeTranslator(self._qt_translator)
+            self._qt_translator = None
+        if get_language() == "pt":
+            translator = QTranslator(self)
+            path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+            if translator.load("qtbase_pt_BR", path):
+                app.installTranslator(translator)
+                self._qt_translator = translator
+
+    def _refresh_menu(self) -> None:
+        """Recria o menu (por exemplo, após trocar o idioma)."""
+        self.menu = self._build_menu()
+        self.widget.set_menu(self.menu)
+        if self.tray:
+            self.tray.setContextMenu(self.menu)
+        self._apply_theme_to_menu()
 
     def _apply_theme_to_menu(self) -> None:
         self.menu.setStyleSheet(dialog_qss(self.palette))
@@ -290,28 +316,28 @@ class Controller(QObject):
             return
         if kind == "auth":
             # não insiste para não bloquear a conta; aguarda o usuário revisar
-            self.widget.show_message("lock", "Não foi possível entrar", str(exc), "Revisar conta",
-                                     lambda: self.open_settings("Conta"))
+            self.widget.show_message("lock", tr("Couldn't sign in"), str(exc), tr("Review account"),
+                                     lambda: self.open_settings("Account"))
         elif kind == "terms":
-            self.widget.show_message("alert", "Ação necessária no LibreLinkUp", str(exc), "Tentar novamente",
+            self.widget.show_message("alert", tr("Action needed in LibreLinkUp"), str(exc), tr("Try again"),
                                      self.refresh_now)
             self._schedule(MAX_BACKOFF_SECONDS)
         elif kind == "nopatient":
-            self.widget.show_message("user_plus", "Nenhum paciente conectado", str(exc), "Tentar novamente",
+            self.widget.show_message("user_plus", tr("No patient connected"), str(exc), tr("Try again"),
                                      self.refresh_now)
             self._schedule(MAX_BACKOFF_SECONDS)
         else:
-            self.widget.show_message("alert", "Algo deu errado", str(exc) or exc.__class__.__name__,
-                                     "Tentar novamente", self.refresh_now)
+            self.widget.show_message("alert", tr("Something went wrong"), str(exc) or exc.__class__.__name__,
+                                     tr("Try again"), self.refresh_now)
             self._schedule(MAX_BACKOFF_SECONDS)
         self.data = None
         self._update_tray()
 
     def _show_setup_message(self) -> None:
         self.widget.show_message(
-            "user_plus", "Conecte sua conta",
-            "Entre com seu e-mail e senha do LibreLinkUp para ver sua glicemia aqui.",
-            "Configurar", self.open_onboarding if not self.settings.onboarded else lambda: self.open_settings("Conta"),
+            "user_plus", tr("Connect your account"),
+            tr("Sign in with your LibreLinkUp email and password to see your glucose here."),
+            tr("Set up"), self.open_onboarding if not self.settings.onboarded else lambda: self.open_settings("Account"),
         )
 
     # -- alertas ---------------------------------------------------------------------
@@ -328,8 +354,9 @@ class Controller(QObject):
         c = self.data.current
         icon = (QSystemTrayIcon.MessageIcon.Critical if level.is_urgent else QSystemTrayIcon.MessageIcon.Warning)
         self.tray.showMessage(
-            f"Glicemia {level.label.lower()}: {format_value(c.value_mgdl, st.unit)} {st.unit}",
-            f"Tendência: {c.trend.label}. Confirme no seu leitor ou app oficial.",
+            tr("Glucose {level}: {value} {unit}", level=level.label.lower(),
+               value=format_value(c.value_mgdl, st.unit), unit=st.unit),
+            tr("Trend: {trend}. Confirm on your official reader or app.", trend=c.trend.label),
             icon, 15000,
         )
 
@@ -344,8 +371,19 @@ class Controller(QObject):
         dlg = OnboardingDialog(self.settings, self.palette)
         dlg.setWindowIcon(app_icon())
         dlg.finished_setup.connect(self._on_onboarded)
+        dlg.language_changed.connect(self._on_onboarding_language)
         dlg.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._present(dlg)
+
+    def _on_onboarding_language(self, code: str) -> None:
+        self.settings.language = code
+        set_language(code)
+        self._install_qt_translator()
+        self.save()
+        self._refresh_menu()
+        self.widget.apply_style(self.settings, self.palette)
+        self._show_setup_message()
+        QTimer.singleShot(0, self.open_onboarding)
 
     def _on_onboarded(self, new: Settings, demo: bool) -> None:
         if demo:
@@ -376,6 +414,9 @@ class Controller(QObject):
         account_changed = force_reconnect or any(getattr(old, f) != getattr(new, f) for f in ACCOUNT_FIELDS)
         new.onboarded = True if (new.email or old.onboarded) else new.onboarded
         new.pos_x, new.pos_y = self.widget.x(), self.widget.y()
+        language_changed = new.language != old.language
+        if language_changed:
+            set_language(new.language)
         self.settings = new
         self.save()
         if new.autostart != old.autostart:
@@ -383,6 +424,9 @@ class Controller(QObject):
         self.palette = palette_for(new.theme)
         self.widget.set_ai_enabled(new.ai_enabled)
         self.widget.apply_style(new, self.palette)
+        if language_changed:
+            self._install_qt_translator()
+            self._refresh_menu()
         self._apply_theme_to_menu()
         self._configure_ai_timer()
         if self.analysis_dialog:
@@ -394,6 +438,8 @@ class Controller(QObject):
             self.rebuild_source()
         elif new.poll_seconds != old.poll_seconds and self.source:
             self._schedule(new.poll_seconds)
+        if language_changed and not account_changed and self.widget.stack.currentIndex() == self.widget.PAGE_MESSAGE:
+            self.rebuild_source()
         self._update_tray()
         self._sync_menu()
 
@@ -411,7 +457,7 @@ class Controller(QObject):
 
     def open_analysis(self) -> None:
         if not self.settings.ai_enabled:
-            self.open_settings("IA")
+            self.open_settings("AI")
             return
         self._ensure_analysis_dialog()
         self._present(self.analysis_dialog)
@@ -425,20 +471,21 @@ class Controller(QObject):
         dialog = None if auto else self.analysis_dialog
         if not self.data or not self.data.history:
             if dialog:
-                dialog.show_error("Ainda não há leituras para analisar.")
+                dialog.show_error(tr("There are no readings to analyze yet."))
             return
         window = metrics_mod.window(self.data.history, st.ai_hours)
         m = metrics_mod.compute(window, st.target_low, st.target_high)
         model = st.ai_model or info.default_model
         user_prompt = build_user_prompt(self.data, st.unit, st.target_low, st.target_high, st.ai_hours)
         key = get_secret(ai_key_name(st.ai_provider))
+        system = system_prompt()
         if dialog:
             dialog.set_context(m, st.unit, st.ai_hours, info.name, model)
             dialog.show_loading()
         self.analysis_running = True
 
         def work():
-            return analyze(st.ai_provider, key, model, SYSTEM_PROMPT, user_prompt, base_url=st.ai_base_url)
+            return analyze(st.ai_provider, key, model, system, user_prompt, base_url=st.ai_base_url)
 
         def done(text: str):
             self.analysis_running = False
@@ -447,12 +494,12 @@ class Controller(QObject):
                 self.analysis_dialog.set_context(m, st.unit, st.ai_hours, info.name, model)
                 self.analysis_dialog.show_result(text)
             if auto and self.tray and not (self.analysis_dialog and self.analysis_dialog.isVisible()):
-                self.tray.showMessage("Nova análise disponível", "Clique para ver a análise das suas leituras.",
+                self.tray.showMessage(tr("New analysis available"), tr("Click to see the analysis of your readings."),
                                       QSystemTrayIcon.MessageIcon.Information, 10000)
 
         def fail(exc: Exception):
             self.analysis_running = False
-            log.info("Falha na análise de IA: %s", exc)
+            log.info("AI analysis failed: %s", exc)
             if self.analysis_dialog and not auto:
                 self.analysis_dialog.show_error(str(exc))
 
@@ -468,13 +515,14 @@ def _setup_platform_env() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog=APP_ID, description="Glicemia do FreeStyle Libre no seu desktop.")
+    parser = argparse.ArgumentParser(prog=APP_ID, description="FreeStyle Libre glucose on your desktop.")
     parser.add_argument("--demo", nargs="?", const="normal", choices=DemoSource.SCENARIOS,
-                        help="usa dados de demonstração (sem conta)")
-    parser.add_argument("--onboarding", action="store_true", help="mostra o assistente de configuração novamente")
-    parser.add_argument("--debug", action="store_true", help="logs detalhados")
+                        help="use demo data (no account needed)")
+    parser.add_argument("--onboarding", action="store_true", help="show the setup assistant again")
+    parser.add_argument("--debug", action="store_true", help="verbose logging")
     parser.add_argument("--screenshot", metavar="PNG", help=argparse.SUPPRESS)  # captura para revisão de design
     parser.add_argument("--theme", choices=("system", "dark", "light"), help=argparse.SUPPRESS)
+    parser.add_argument("--lang", choices=("en", "pt"), help=argparse.SUPPRESS)
     parser.add_argument("--compact", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
 
@@ -496,6 +544,7 @@ def main() -> None:
     if args.screenshot:
         settings = Settings(onboarded=True, pos_x=40, pos_y=40)
         settings.theme = args.theme or "dark"
+        settings.language = args.lang or "en"
         settings.compact = args.compact
     controller = Controller(settings, demo=args.demo, persist=persist)
 

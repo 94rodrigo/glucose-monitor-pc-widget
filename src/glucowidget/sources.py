@@ -7,6 +7,8 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
+from glucowidget.i18n import tr
+
 from glucowidget.libre.client import (
     LibreError,
     LibreLinkUpClient,
@@ -22,7 +24,7 @@ class SetupRequired(Exception):
 class LibreSource:
     def __init__(self, email: str, password: str, region: str, patient_id: str, version: str):
         if not email or not password:
-            raise SetupRequired("Configure sua conta LibreLinkUp.")
+            raise SetupRequired(tr("Set up your LibreLinkUp account."))
         self.client = LibreLinkUpClient(email, password, region=region, version=version)
         self.patient_id = patient_id
 
@@ -35,8 +37,7 @@ class LibreSource:
             patients = self.client.connections()
             if not patients:
                 raise NoPatientError(
-                    "Esta conta não segue nenhum paciente. No app LibreLink, vá em "
-                    "Compartilhar → Conectar app LibreLinkUp e convide este e-mail."
+                    tr("This account is not following any patient. In the LibreLink app, go to Share → Connect LibreLinkUp app and invite this email.")
                 )
             self.patient_id = patients[0].id
         return self.client.graph(self.patient_id)
@@ -67,14 +68,13 @@ class DemoSource:
         if self.scenario == "auth":
             from glucowidget.libre.client import AuthError
 
-            raise AuthError("E-mail ou senha incorretos.")
+            raise AuthError(tr("Incorrect email or password."))
         if self.scenario == "nopatient":
             raise NoPatientError(
-                "Esta conta não segue nenhum paciente. No app LibreLink, vá em "
-                "Compartilhar → Conectar app LibreLinkUp e convide este e-mail."
+                tr("This account is not following any patient. In the LibreLink app, go to Share → Connect LibreLinkUp app and invite this email.")
             )
         if self.scenario == "offline" and self.calls > 1:
-            raise httpx.ConnectError("Sem conexão (demo)")
+            raise httpx.ConnectError("No connection (demo)")
 
         now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
         if self.scenario == "stale":

@@ -21,10 +21,11 @@ from PySide6.QtWidgets import (
 )
 
 from glucowidget import APP_NAME
+from glucowidget.i18n import N_, decimal, get_language, tr
 from glucowidget.config import Settings
 from glucowidget.metrics import Metrics
 from glucowidget.ui import icons
-from glucowidget.ui.components import Spinner, card
+from glucowidget.ui.components import SegmentedControl, Spinner, card
 from glucowidget.ui.pages import (
     AboutPage,
     AccountPage,
@@ -60,13 +61,13 @@ def footer_bar(palette: Palette) -> tuple[QWidget, QHBoxLayout]:
 class SettingsDialog(QDialog):
     saved = Signal(object)  # Settings
 
-    NAV = [("Conta", "user_plus", AccountPage), ("Glicemia", "drop", RangePage),
-           ("Aparência", "settings", AppearancePage), ("Alertas", "alert", AlertsPage),
-           ("IA", "sparkles", AIPage), ("Sobre", "check", AboutPage)]
+    NAV = [(N_("Account"), "user_plus", AccountPage), (N_("Glucose"), "drop", RangePage),
+           (N_("Appearance"), "settings", AppearancePage), (N_("Alerts"), "alert", AlertsPage),
+           (N_("AI"), "sparkles", AIPage), (N_("About"), "check", AboutPage)]
 
     def __init__(self, settings: Settings, palette: Palette, start_page: str = "", parent=None):
         super().__init__(parent)
-        self.setWindowTitle(f"Configurações — {APP_NAME}")
+        self.setWindowTitle(tr("Settings — {app}", app=APP_NAME))
         self.setStyleSheet(dialog_qss(palette))
         self.resize(820, 600)
         self.settings = copy.deepcopy(settings)
@@ -101,7 +102,7 @@ class SettingsDialog(QDialog):
             page.load(self.settings)
             self.pages.append(page)
             self.stack.addWidget(scrollable(page))
-            item = QListWidgetItem(icons.icon(icon_name, palette.text_muted), label)
+            item = QListWidgetItem(icons.icon(icon_name, palette.text_muted), tr(label))
             self.nav.addItem(item)
         self.nav.currentRowChanged.connect(self.stack.setCurrentIndex)
         start = next((i for i, (label, *_ ) in enumerate(self.NAV) if label == start_page), 0)
@@ -111,9 +112,9 @@ class SettingsDialog(QDialog):
         self.error = QLabel()
         self.error.setObjectName("err")
         h.addWidget(self.error, 1)
-        cancel = QPushButton("Cancelar")
+        cancel = QPushButton(tr("Cancel"))
         cancel.clicked.connect(self.reject)
-        save = QPushButton("Salvar")
+        save = QPushButton(tr("Save"))
         save.setObjectName("primary")
         save.setDefault(True)
         save.clicked.connect(self._save)
@@ -136,10 +137,11 @@ class SettingsDialog(QDialog):
 
 class OnboardingDialog(QDialog):
     finished_setup = Signal(object, bool)  # Settings, demo
+    language_changed = Signal(str)
 
     def __init__(self, settings: Settings, palette: Palette, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(f"Bem-vindo ao {APP_NAME}")
+        self.setWindowTitle(tr("Welcome to {app}", app=APP_NAME))
         self.setStyleSheet(dialog_qss(palette))
         self.resize(640, 620)
         self.settings = copy.deepcopy(settings)
@@ -158,9 +160,14 @@ class OnboardingDialog(QDialog):
         self.step_label = QLabel()
         self.step_label.setObjectName("subtle")
         self.dots = StepDots(3, palette)
+        self.lang = SegmentedControl([("en", "EN"), ("pt", "PT")])
+        self.lang.set_value(get_language())
+        self.lang.changed.connect(self._language_chosen)
         top = QHBoxLayout()
         top.addWidget(logo)
         top.addStretch(1)
+        top.addWidget(self.lang)
+        top.addSpacing(16)
         top.addWidget(self.step_label)
         top.addSpacing(10)
         top.addWidget(self.dots)
@@ -175,17 +182,17 @@ class OnboardingDialog(QDialog):
         root.addWidget(self.stack, 1)
 
         bar, h = footer_bar(palette)
-        self.demo_btn = QPushButton("Explorar em modo demonstração")
+        self.demo_btn = QPushButton(tr("Explore in demo mode"))
         self.demo_btn.setObjectName("ghost")
         self.demo_btn.clicked.connect(self._demo)
         self.error = QLabel()
         self.error.setObjectName("err")
-        self.back_btn = QPushButton("Voltar")
+        self.back_btn = QPushButton(tr("Back"))
         self.back_btn.clicked.connect(lambda: self._go(self.stack.currentIndex() - 1))
-        self.skip_btn = QPushButton("Pular")
+        self.skip_btn = QPushButton(tr("Skip"))
         self.skip_btn.setObjectName("ghost")
         self.skip_btn.clicked.connect(self._finish)
-        self.next_btn = QPushButton("Continuar")
+        self.next_btn = QPushButton(tr("Continue"))
         self.next_btn.setObjectName("primary")
         self.next_btn.setDefault(True)
         self.next_btn.clicked.connect(self._next)
@@ -201,11 +208,11 @@ class OnboardingDialog(QDialog):
         i = max(0, min(len(self.pages) - 1, i))
         self.stack.setCurrentIndex(i)
         self.dots.set_index(i)
-        self.step_label.setText(f"Etapa {i + 1} de {len(self.pages)}")
+        self.step_label.setText(tr("Step {i} of {n}", i=i + 1, n=len(self.pages)))
         self.back_btn.setVisible(i > 0)
         self.demo_btn.setVisible(i == 0)
         self.skip_btn.setVisible(i == len(self.pages) - 1)
-        self.next_btn.setText("Concluir" if i == len(self.pages) - 1 else "Continuar")
+        self.next_btn.setText(tr("Finish") if i == len(self.pages) - 1 else tr("Continue"))
         self.error.clear()
 
     def _next(self):
@@ -229,6 +236,10 @@ class OnboardingDialog(QDialog):
         self.settings.onboarded = True
         self.finished_setup.emit(self.settings, False)
         self.accept()
+
+    def _language_chosen(self, code: str):
+        self.language_changed.emit(code)
+        self.close()
 
     def _demo(self):
         self.finished_setup.emit(self.settings, True)
@@ -258,7 +269,7 @@ class AnalysisDialog(QDialog):
     def __init__(self, palette: Palette, parent=None):
         super().__init__(parent)
         self.pal = palette
-        self.setWindowTitle(f"Análise com IA — {APP_NAME}")
+        self.setWindowTitle(tr("AI analysis — {app}", app=APP_NAME))
         self.setStyleSheet(dialog_qss(palette))
         self.resize(640, 680)
 
@@ -272,7 +283,7 @@ class AnalysisDialog(QDialog):
         title_row = QHBoxLayout()
         ico = QLabel()
         ico.setPixmap(icons.pixmap("sparkles", palette.accent, 22))
-        self.title = QLabel("Análise das suas leituras")
+        self.title = QLabel(tr("Analysis of your readings"))
         self.title.setObjectName("h1")
         title_row.addWidget(ico)
         title_row.addWidget(self.title, 1)
@@ -292,7 +303,7 @@ class AnalysisDialog(QDialog):
         self.spinner = Spinner(36)
         self.spinner.set_color(palette.accent)
         ll.addWidget(self.spinner, 0, Qt.AlignmentFlag.AlignHCenter)
-        wait = QLabel("Analisando suas leituras…")
+        wait = QLabel(tr("Analyzing your readings…"))
         wait.setObjectName("muted")
         ll.addWidget(wait, 0, Qt.AlignmentFlag.AlignHCenter)
         ll.addStretch(2)
@@ -326,12 +337,12 @@ class AnalysisDialog(QDialog):
         root.addWidget(self.body, 1)
 
         bar, h = footer_bar(palette)
-        disclaimer = QLabel("Gerado por IA · não substitui orientação médica")
+        disclaimer = QLabel(tr("Generated by AI · does not replace medical advice"))
         disclaimer.setObjectName("subtle")
         h.addWidget(disclaimer, 1)
-        self.copy_btn = QPushButton(icons.icon("copy", palette.text_muted), " Copiar")
+        self.copy_btn = QPushButton(icons.icon("copy", palette.text_muted), tr(" Copy"))
         self.copy_btn.clicked.connect(self._copy)
-        self.again_btn = QPushButton(icons.icon("refresh", palette.accent_text), " Analisar novamente")
+        self.again_btn = QPushButton(icons.icon("refresh", palette.accent_text), tr(" Analyze again"))
         self.again_btn.setObjectName("primary")
         self.again_btn.clicked.connect(self.rerun)
         h.addWidget(self.copy_btn)
@@ -343,19 +354,20 @@ class AnalysisDialog(QDialog):
             item = self.chips.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-        self.subtitle.setText(f"Últimas {hours} h · {provider} · {model}")
+        self.subtitle.setText(tr("Last {hours} h · {provider} · {model}", hours=hours, provider=provider, model=model))
         if not metrics:
             return
         chips = [
-            ("Média", f"{format_value(metrics.mean, unit)}", f"Média em {unit}"),
-            ("No alvo", f"{metrics.tir:.0f}%", "Tempo no alvo (TIR)"),
-            ("Variação", f"{metrics.cv:.0f}%", "Coeficiente de variação — ideal ≤ 36%"),
-            ("GMI", f"{metrics.gmi:.1f}%", "Indicador de gestão da glicose (estimativa de A1c)"),
+            (tr("Mean"), f"{format_value(metrics.mean, unit)}", tr("Mean in {unit}", unit=unit)),
+            (tr("In range"), f"{metrics.tir:.0f}%", tr("Time in range (TIR)")),
+            (tr("Variation"), f"{metrics.cv:.0f}%", tr("Coefficient of variation — ideal ≤ 36%")),
+            ("GMI", decimal(f"{metrics.gmi:.1f}") + "%", tr("Glucose Management Indicator (A1c estimate)")),
         ]
         for label, value, hint in chips:
             self.chips.addWidget(MetricChip(label, value, self.pal, hint), 1)
 
     def show_loading(self):
+        self.copy_btn.setText(tr(" Copy"))
         self.again_btn.setEnabled(False)
         self.copy_btn.setEnabled(False)
         self.spinner.start()
@@ -382,4 +394,4 @@ class AnalysisDialog(QDialog):
 
     def _copy(self):
         QGuiApplication.clipboard().setText(self.text.toMarkdown())
-        self.copy_btn.setText(" Copiado!")
+        self.copy_btn.setText(tr(" Copied!"))
