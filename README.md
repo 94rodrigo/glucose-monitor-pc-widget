@@ -1,34 +1,34 @@
 # GlucoWidget
 
-Widget de desktop (Windows e Linux) que mostra a glicemia do **FreeStyle Libre** em tempo real via **LibreLinkUp**, com análise opcional por IA usando a sua própria chave (OpenAI, Claude, Gemini, OpenRouter, Groq, DeepSeek, Mistral, Ollama ou qualquer API compatível com OpenAI).
+A desktop widget (Windows and Linux) that shows your **FreeStyle Libre** glucose in real time via **LibreLinkUp**, with optional AI analysis using your own API key (OpenAI, Claude, Gemini, OpenRouter, Groq, DeepSeek, Mistral, Ollama, or any OpenAI-compatible API).
 
-> ⚠️ Não é um dispositivo médico. Confirme sempre no leitor/app oficial antes de qualquer decisão de tratamento. Projeto não afiliado à Abbott.
+> ⚠️ Not a medical device. Always confirm on your official reader/app before making any treatment decision. Not affiliated with Abbott.
 
-## Recursos
+## Features
 
-- Janela flutuante sem bordas, arrastável, sempre no topo, translúcida (estilo "glass"), tema claro/escuro (segue o sistema)
-- Valor grande com seta de tendência, tempo desde a leitura, variação, mini gráfico (3/6/12 h) com faixa-alvo e tooltip
-- Cores com significado (baixo/alvo/alto/desatualizado) **e** rótulo textual — nunca só cor
-- Modo compacto (duplo clique), tamanho e opacidade ajustáveis
-- Unidade **mg/dL** (padrão) ou **mmol/L**
-- Interface em **inglês** (padrão) e **português (Brasil)** — troque em Settings → Appearance → Language (ou na primeira tela do assistente); as análises de IA também respondem no idioma escolhido
-- Ícone na bandeja mostrando o valor atual; notificações ao sair da faixa
-- Assistente de configuração no primeiro uso e modo demonstração
-- Análise por IA sob demanda (ou automática), com métricas locais: média, tempo no alvo, CV, GMI
-- Senha e chaves de API guardadas no cofre do sistema (Windows Credential Manager / Secret Service)
+- Frameless floating window: draggable, always on top, translucent ("glass" style), light/dark theme (follows the system)
+- Large value with trend arrow, time since the reading, change, mini chart (3/6/12 h) with target range and tooltip
+- Meaningful colors (low / in range / high / outdated) **and** a text label — never color alone
+- Compact mode (double-click), adjustable size and opacity
+- **mg/dL** (default) or **mmol/L**
+- **English** (default) and **Portuguese (Brazil)** interface — switch in Settings → Appearance → Language (or on the first screen of the setup assistant); AI analyses also answer in the chosen language
+- Tray icon showing the current value; notifications when leaving the target range
+- Setup assistant on first run, plus a demo mode
+- AI analysis on demand (or automatic), with local metrics: mean, time in range, CV, GMI
+- Password and API keys stored in the system keyring (Windows Credential Manager / Secret Service)
 
-## Pré-requisito: conta LibreLinkUp
+## Prerequisite: a LibreLinkUp account
 
-O LibreView não tem API pública. O widget usa a API (não oficial) do app **LibreLinkUp**:
+LibreView has no public API. The widget uses the (unofficial) API of the **LibreLinkUp** app:
 
-1. Instale o app **LibreLinkUp** no celular e crie uma conta (pode ser outro e-mail que o do paciente).
-2. No app **LibreLink** do paciente: *Compartilhar → Conectar app LibreLinkUp* → convide esse e-mail.
-3. Aceite o convite no LibreLinkUp e conclua os termos de uso.
-4. Use esse e-mail/senha no widget.
+1. Install the **LibreLinkUp** app on your phone and create an account (it can use a different email than the patient's).
+2. In the patient's **LibreLink** app: *Share → Connect LibreLinkUp app* → invite that email.
+3. Accept the invitation in LibreLinkUp and finish the terms of use.
+4. Use that email/password in the widget.
 
-## Executar a partir do código
+## Run from source
 
-Requer Python 3.11+.
+Requires Python 3.11+.
 
 ```bash
 python3 -m venv .venv
@@ -42,21 +42,21 @@ python3 -m venv .venv
 .venv/bin/glucowidget
 ```
 
-No Windows, use `.venv\Scripts\pip` e `.venv\Scripts\glucowidget`.
+On Windows, use `.venv\Scripts\pip` and `.venv\Scripts\glucowidget`.
 
-Opções:
+Options:
 
-- `--demo [normal|low|high|stale|offline|auth|nopatient]` — dados sintéticos para testar a interface
-- `--onboarding` — reabre o assistente de configuração
-- `--debug` — logs detalhados
+- `--demo [normal|low|high|stale|offline|auth|nopatient]` — synthetic data to try the interface without an account
+- `--onboarding` — reopen the setup assistant
+- `--debug` — verbose logging
 
 ### Linux
 
-- O Qt precisa do pacote `libxcb-cursor0` (Debian/Ubuntu: `sudo apt install libxcb-cursor0`).
-- Em sessões **Wayland**, o widget roda via XWayland automaticamente quando `libxcb-cursor0` está instalado, para que "sempre no topo" e a posição salva funcionem. Sem ele, roda em Wayland nativo, onde o compositor pode ignorar essas duas opções.
-- O ícone de bandeja no GNOME precisa da extensão *AppIndicator* (já vem no Ubuntu).
+- Qt needs the `libxcb-cursor0` package (Debian/Ubuntu: `sudo apt install libxcb-cursor0`).
+- On **Wayland** sessions, the widget runs through XWayland automatically when `libxcb-cursor0` is installed, so that "always on top" and the saved position work. Without it, it runs on native Wayland, where the compositor may ignore those two options.
+- The tray icon on GNOME needs the *AppIndicator* extension (included in Ubuntu).
 
-## Gerar executável
+## Build an executable
 
 ```bash
 .venv/bin/pip install pyinstaller
@@ -66,13 +66,13 @@ Opções:
 .venv/bin/pyinstaller packaging/glucowidget.spec
 ```
 
-O resultado fica em `dist/GlucoWidget` (Linux) ou `dist\GlucoWidget.exe` (Windows). O PyInstaller não faz build cruzado: gere o `.exe` numa máquina Windows.
+The result is in `dist/GlucoWidget` (Linux) or `dist\GlucoWidget.exe` (Windows). PyInstaller cannot cross-build: build the `.exe` on a Windows machine.
 
-## Fonte
+## Font
 
-A interface usa **Inter** se estiver instalada ou se você colocar os arquivos `.ttf` em `src/glucowidget/assets/fonts/` (licença OFL). Sem ela, usa Segoe UI (Windows) ou a fonte do sistema.
+The interface uses **Inter** if it is installed or if you drop the `.ttf` files into `src/glucowidget/assets/fonts/` (OFL license). Without it, it falls back to Segoe UI (Windows) or the system font.
 
-## Testes
+## Tests
 
 ```bash
 .venv/bin/pip install pytest
@@ -82,21 +82,21 @@ A interface usa **Inter** se estiver instalada ou se você colocar os arquivos `
 .venv/bin/python -m pytest
 ```
 
-## Estrutura
+## Project layout
 
 ```
 src/glucowidget/
-  app.py            controlador: polling, bandeja, alertas, IA
-  i18n.py, locales/ traduções (textos-fonte em inglês; catálogo em locales/pt.py)
-  config.py         configurações (JSON) e segredos (keyring)
-  libre/            cliente LibreLinkUp e modelos
-  ai/               provedores de IA e prompt
-  metrics.py        métricas de CGM (TIR, CV, GMI)
-  ui/               widget, gráfico, componentes, diálogos, tema (design tokens)
+  app.py            controller: polling, tray, alerts, AI
+  i18n.py, locales/ translations (English source strings; catalog in locales/pt.py)
+  config.py         settings (JSON) and secrets (keyring)
+  libre/            LibreLinkUp client and models
+  ai/               AI providers and prompt
+  metrics.py        CGM metrics (TIR, CV, GMI)
+  ui/               widget, chart, components, dialogs, theme (design tokens)
 ```
 
-Configurações ficam em `~/.config/glucowidget/` (Linux) ou `%LOCALAPPDATA%\glucowidget\` (Windows).
+Settings are stored in `~/.config/glucowidget/` (Linux) or `%LOCALAPPDATA%\glucowidget\` (Windows).
 
-## Traduções
+## Translations
 
-Os textos do código ficam em inglês e são marcados com `tr("...")` (ou `N_("...")` para constantes). Para adicionar ou alterar um idioma, edite `src/glucowidget/locales/pt.py`; o teste `tests/test_i18n.py` falha se algum texto ficar sem tradução ou com placeholders diferentes.
+Strings in the code are written in English and marked with `tr("...")` (or `N_("...")` for constants). To add or change a language, edit `src/glucowidget/locales/pt.py`; `tests/test_i18n.py` fails if any string is missing a translation or has mismatched placeholders.
