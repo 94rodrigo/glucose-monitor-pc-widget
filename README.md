@@ -62,7 +62,14 @@ This means you need:
 
 ### 2. Install GlucoWidget
 
-**Option A: download a ready-made build.** Every push builds executables for Windows and Linux. Open the [latest run of the CI workflow](https://github.com/94rodrigo/glucose-monitor-pc-widget/actions/workflows/ci.yml), scroll to **Artifacts** and download `GlucoWidget-windows` or `GlucoWidget-linux` (you need to be signed in to GitHub). There is no installer: unzip the download and run `GlucoWidget.exe` (Windows) or `GlucoWidget` (Linux; make it executable first with `chmod +x GlucoWidget`).
+**Option A: download a ready-made build.** These links always point to the latest commit on `main`; the files are rebuilt and replaced automatically on every push.
+
+| System | Download |
+| --- | --- |
+| Windows | [GlucoWidget-windows.exe](https://github.com/94rodrigo/glucose-monitor-pc-widget/releases/download/latest/GlucoWidget-windows.exe) |
+| Linux | [GlucoWidget-linux](https://github.com/94rodrigo/glucose-monitor-pc-widget/releases/download/latest/GlucoWidget-linux) (then run `chmod +x GlucoWidget-linux`) |
+
+There is no installer: just run the file. The builds are **not code-signed**, so Windows SmartScreen may show a warning. You can check the download against [SHA256SUMS.txt](https://github.com/94rodrigo/glucose-monitor-pc-widget/releases/download/latest/SHA256SUMS.txt), and the build is listed on the [releases page](https://github.com/94rodrigo/glucose-monitor-pc-widget/releases/tag/latest).
 
 **Option B: run from source.** Requires Python 3.11+.
 
@@ -213,7 +220,7 @@ Command-line options (mostly for development):
 
 The result is `dist/GlucoWidget` (Linux) or `dist\GlucoWidget.exe` (Windows). Check it with `dist/GlucoWidget --selftest report.txt`.
 
-**Continuous integration.** `.github/workflows/ci.yml` runs the tests on Linux and Windows for every push and pull request, builds the executable on both systems, runs `--selftest` on it (on Windows it also checks that the Credential Manager backend is the one in use) and uploads the builds as artifacts.
+**Continuous integration.** `.github/workflows/ci.yml` runs the tests on Linux and Windows for every push and pull request, builds the executable on both systems, runs `--selftest` on it (on Windows it also checks that the Credential Manager backend is the one in use) and uploads the builds as artifacts. For pushes to `main`, a final job replaces the rolling **Latest build** release with the new executables and checksums; that is what the download links above point to.
 
 **Project layout**
 
