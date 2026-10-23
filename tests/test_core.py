@@ -72,7 +72,7 @@ def test_prompt_contains_readings_and_metrics():
     text = build_user_prompt(data, MGDL, 70, 180, 3, now=NOW)
     assert "Target range: 70–180 mg/dL" in text
     assert "trend rising" in text
-    assert "time in range 67%" in text
+    assert "in range 67%" in text
     assert text.rstrip().splitlines()[-3].endswith(",210")
 
 

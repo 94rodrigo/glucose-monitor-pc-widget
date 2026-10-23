@@ -44,7 +44,7 @@ This means you need:
 - **System tray:** the tray icon shows the current value in the status color; the menu has everything you need.
 - **Notifications** when your glucose leaves the target range (optional).
 - **mg/dL (default) or mmol/L**, and **English (default) or Portuguese (Brazil)**.
-- **Optional AI analysis** with your own API key: summary, patterns, current trend, and points of attention, plus local metrics (mean, time in range, variation, GMI) that work without any AI.
+- **Optional AI analysis** with your own API key: summary, patterns, current trend, and points of attention, plus local metrics (mean, time in range, variation, min–max) that work without any AI.
 - **Private by design:** your password and API keys are stored in the system keyring (Windows Credential Manager / Secret Service), not in plain files.
 - **First-run assistant** and a **demo mode** to try it without an account.
 
@@ -160,9 +160,9 @@ GlucoWidget can send your recent readings to an AI model and show a written anal
 
 Model names change often: the model field is editable, so type any model your provider offers.
 
-**What you get:** the window shows four local metrics (mean, time in range, variation, GMI) and then a written analysis in the interface language: summary, observed patterns, current trend, points of attention and general suggestions. The AI is instructed never to suggest insulin or medication doses. **Analyze again** repeats it, **Copy** copies the text.
+**What you get:** the window shows four local metrics (mean, time in range, variation, min–max) and then a short written analysis in the interface language: summary, patterns, current trend and points of attention. The AI is told to use only your data (no invented causes such as meals or exercise), to say so when data is outdated or has gaps, to open with an alert when the latest reading is beyond your *very low* / *very high* thresholds, and not to repeat the numbers already shown. The AI is instructed never to suggest insulin or medication doses. **Analyze again** repeats it, **Copy** copies the text.
 
-**What is sent:** the unit, your target range, the current reading and trend, the summary metrics, and the readings of the chosen period (3, 6, 12 or 24 hours; at most about 160 points). Your name, email and password are never included.
+**What is sent:** the unit, your target range and urgent thresholds, the current time, the latest reading (with its age and trend), how much data is actually available and any gaps, time spent in each range, the summary metrics, and the readings of the chosen period (3, 6, 12 or 24 hours, limited to the history LibreLinkUp provides; at most about 160 points, always including the lowest and highest). Your name, email and password are never included.
 
 **Automatic analysis** (every 1, 3 or 6 hours) is off by default so it never spends tokens without you knowing. When one finishes while the window is closed, you get a notification; click it to read it.
 
@@ -232,7 +232,7 @@ src/glucowidget/
   sources.py        real data source and demo source
   status.py         low / in range / high classification
   units.py          mg/dL <-> mmol/L conversion and formatting
-  metrics.py        CGM metrics (time in range, variation, GMI)
+  metrics.py        CGM metrics (time in ranges, variation, coverage and gaps)
   ai/               AI providers (plain REST) and prompt building
   i18n.py, locales/ translations: English source strings, catalog in locales/pt.py
   ui/               widget, chart, components, dialogs, title bar, theme (design tokens)

@@ -2,31 +2,58 @@
 
 CATALOG: dict[str, str] = {
     # --- Prompt de IA
-    "You are an assistant that helps people with diabetes understand continuous glucose monitoring "
-    "(CGM) data. Always answer in English, in concise Markdown, with a warm and objective tone. Use "
-    "the sections: **Summary**, **Observed patterns**, **Current trend**, **Points of attention** and "
-    "**General suggestions**. Be specific, citing times and values. Never prescribe insulin or "
-    "medication doses. If there is immediate risk (severe hypoglycemia or persistently very high "
-    "hyperglycemia), highlight it at the start. End with a short line reminding that the analysis "
-    "does not replace medical advice.": (
-        "Você é um assistente que ajuda pessoas com diabetes a entender dados de monitoramento "
-        "contínuo de glicose (CGM). Responda sempre em português do Brasil, em Markdown conciso, "
-        "com tom acolhedor e objetivo. Use as seções: **Resumo**, **Padrões observados**, "
-        "**Tendência atual**, **Pontos de atenção** e **Sugestões gerais**. Seja específico, citando "
-        "horários e valores. Nunca prescreva doses de insulina ou medicamentos. Se houver risco "
-        "imediato (hipoglicemia grave ou hiperglicemia persistente muito alta), destaque no início. "
-        "Termine com uma linha curta lembrando que a análise não substitui orientação médica."
+    "You help people with diabetes understand continuous glucose monitoring (CGM) data. Answer "
+    "in English, in concise Markdown, in plain language and a warm, objective tone, in under "
+    "about 200 words. Use only the data provided: never invent causes (meals, exercise, insulin, "
+    "illness) or facts that are not in the data, and do not predict beyond the next 30 minutes "
+    "or so. If the data is sparse, outdated or has gaps, say so first. Do not repeat the summary "
+    "numbers the app already shows (mean, time in range, variation, min and max); add "
+    "interpretation instead, citing specific times and values. Use the sections: **Summary**, "
+    "**Patterns**, **Current trend** and **Points of attention**. If the latest reading is below "
+    "the very-low threshold or above the very-high threshold, start with a one-line alert. Never "
+    "prescribe or suggest insulin or medication doses or changes; for anything clinical, point to "
+    "the person's care team. End with one short line reminding that this does not replace "
+    "medical advice.": (
+        "Você ajuda pessoas com diabetes a entender dados de monitoramento contínuo de glicose (CGM). "
+        "Responda em português do Brasil, em Markdown conciso, em linguagem simples e tom acolhedor e "
+        "objetivo, com menos de cerca de 200 palavras. Use apenas os dados fornecidos: nunca invente "
+        "causas (refeições, exercício, insulina, doenças) nem fatos que não estejam nos dados, e não "
+        "faça previsões além dos próximos 30 minutos, mais ou menos. Se os dados forem poucos, "
+        "estiverem desatualizados ou tiverem falhas, diga isso primeiro. Não repita os números-resumo "
+        "que o app já mostra (média, tempo no alvo, variação, mínimo e máximo); acrescente "
+        "interpretação, citando horários e valores específicos. Use as seções: **Resumo**, "
+        "**Padrões**, **Tendência atual** e **Pontos de atenção**. Se a última leitura estiver abaixo "
+        "do limite de muito baixo ou acima do limite de muito alto, comece com um alerta de uma "
+        "linha. Nunca prescreva nem sugira doses ou mudanças de insulina ou medicamentos; para "
+        "qualquer questão clínica, indique a equipe de saúde da pessoa. Termine com uma linha curta "
+        "lembrando que isso não substitui orientação médica."
     ),
-    "Unit: {unit}. Target range: {low}–{high} {unit}.": "Unidade: {unit}. Faixa-alvo: {low}–{high} {unit}.",
-    "Period analyzed: last {hours} h ({count} readings).": "Período analisado: últimas {hours} h ({count} leituras).",
+    "Unit: {unit}. Target range: {low}–{high} {unit}. Urgent thresholds: below {urgent_low} and "
+    "above {urgent_high} {unit}.": (
+        "Unidade: {unit}. Faixa-alvo: {low}–{high} {unit}. Limites de urgência: abaixo de "
+        "{urgent_low} e acima de {urgent_high} {unit}."
+    ),
+    "Current time: {time}.": "Hora atual: {time}.",
+    "Latest reading: {value} {unit} at {time} ({age} min ago), trend {trend}.":
+        "Última leitura: {value} {unit} às {time} (há {age} min), tendência {trend}.",
+    "Warning: the latest reading is more than {minutes} minutes old and may not reflect the current "
+    "glucose.": (
+        "Aviso: a última leitura tem mais de {minutes} minutos e pode não refletir a glicemia atual."
+    ),
+    "Data covers {start} to {end} ({span} h, {count} readings).":
+        "Os dados cobrem de {start} a {end} ({span} h, {count} leituras).",
+    "Only {span} h of data are available, less than the {hours} h requested.":
+        "Há apenas {span} h de dados, menos que as {hours} h pedidas.",
+    "Data gaps: {n} (longest {minutes} min, starting {time}).":
+        "Falhas nos dados: {n} (a maior com {minutes} min, a partir das {time}).",
+    "No data gaps.": "Sem falhas nos dados.",
+    "There are no readings in the requested period.": "Não há leituras no período pedido.",
+    "Time in ranges: very low {vl}%; low {l}%; in range {tir}%; high {h}%; very high {vh}%.":
+        "Tempo nas faixas: muito baixo {vl}%; baixo {l}%; no alvo {tir}%; alto {h}%; muito alto {vh}%.",
+    "Period metrics: mean {mean} {unit}; SD {sd} {unit}; CV {cv}%; min {min} {unit}; max {max} {unit}.":
+        "Métricas do período: média {mean} {unit}; DP {sd} {unit}; CV {cv}%; mín {min} {unit}; máx {max} {unit}.",
     "Readings (local time, value):": "Leituras (hora local, valor):",
     "Analyze this data.": "Analise esses dados.",
-    "Current reading: {value} {unit} at {time}, trend {trend}.": "Leitura atual: {value} {unit} às {time}, tendência {trend}.",
-    "Period metrics: mean {mean} {unit}; SD {sd} {unit}; CV {cv}%; time in range {tir}%; below {tbr}%; "
-    "above {tar}%; min {min} {unit}; max {max} {unit}; estimated GMI {gmi}%.": (
-        "Métricas do período: média {mean} {unit}; DP {sd} {unit}; CV {cv}%; tempo no alvo {tir}%; "
-        "abaixo {tbr}%; acima {tar}%; mín {min} {unit}; máx {max} {unit}; GMI estimado {gmi}%."
-    ),
     # --- Provedores de IA
     "Invalid API key or missing permission.": "Chave de API inválida ou sem permissão.",
     "Model or endpoint not found. Check the model name.": "Modelo ou endpoint não encontrado. Confira o nome do modelo.",
@@ -132,7 +159,8 @@ CATALOG: dict[str, str] = {
     "Time in range (TIR)": "Tempo no alvo (TIR)",
     "Variation": "Variação",
     "Coefficient of variation — ideal ≤ 36%": "Coeficiente de variação — ideal ≤ 36%",
-    "Glucose Management Indicator (A1c estimate)": "Indicador de gestão da glicose (estimativa de A1c)",
+    "Min–Max": "Mín–Máx",
+    "Lowest and highest reading": "Menor e maior leitura",
     # --- Páginas de configuração
     "LibreLinkUp account": "Conta LibreLinkUp",
     "Use a LibreLinkUp (follower) app account. The patient must invite this email in the LibreLink app "

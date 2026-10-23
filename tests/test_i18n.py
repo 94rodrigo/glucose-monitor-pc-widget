@@ -73,7 +73,7 @@ def test_ai_prompt_follows_language():
     rs = series([100, 150, 210])
     cur = GlucoseReading(210, rs[-1].timestamp, Trend.RISING)
     data = GlucoseData(current=cur, history=rs[:-1] + [cur])
-    assert "Always answer in English" in system_prompt()
+    assert "Answer in English" in system_prompt()
     assert "Target range" in build_user_prompt(data, MGDL, 70, 180, 3, now=NOW)
     set_language("pt")
     assert "português do Brasil" in system_prompt()

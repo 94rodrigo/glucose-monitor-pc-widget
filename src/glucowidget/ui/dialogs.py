@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from glucowidget import APP_NAME
-from glucowidget.i18n import N_, decimal, get_language, tr
+from glucowidget.i18n import N_, get_language, tr
 from glucowidget.config import Settings
 from glucowidget.metrics import Metrics
 from glucowidget.ui import icons
@@ -365,7 +365,7 @@ class AnalysisDialog(QDialog):
         h.addWidget(self.again_btn)
         root.addWidget(bar)
 
-    def set_context(self, metrics: Metrics | None, unit: str, hours: int, provider: str, model: str):
+    def set_context(self, metrics: Metrics | None, unit: str, hours: int | str, provider: str, model: str):
         while self.chips.count():
             item = self.chips.takeAt(0)
             if item.widget():
@@ -377,7 +377,8 @@ class AnalysisDialog(QDialog):
             (tr("Mean"), f"{format_value(metrics.mean, unit)}", tr("Mean in {unit}", unit=unit)),
             (tr("In range"), f"{metrics.tir:.0f}%", tr("Time in range (TIR)")),
             (tr("Variation"), f"{metrics.cv:.0f}%", tr("Coefficient of variation — ideal ≤ 36%")),
-            ("GMI", decimal(f"{metrics.gmi:.1f}") + "%", tr("Glucose Management Indicator (A1c estimate)")),
+            (tr("Min–Max"), f"{format_value(metrics.min, unit)}–{format_value(metrics.max, unit)}",
+             tr("Lowest and highest reading")),
         ]
         for label, value, hint in chips:
             self.chips.addWidget(MetricChip(label, value, self.pal, hint), 1)

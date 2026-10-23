@@ -475,13 +475,18 @@ class Controller(QObject):
                 dialog.show_error(tr("There are no readings to analyze yet."))
             return
         window = metrics_mod.window(self.data.history, st.ai_hours)
-        m = metrics_mod.compute(window, st.target_low, st.target_high)
+        m = metrics_mod.compute(window, st.target_low, st.target_high, st.urgent_low, st.urgent_high)
+        # o histórico do LibreLinkUp pode ser menor que o período pedido: mostra o que foi realmente analisado
+        covered = metrics_mod.coverage_hours(window)
+        shown_hours = f"{st.ai_hours}" if covered >= st.ai_hours - 0.75 else f"{covered:.1f}"
         model = st.ai_model or info.default_model
-        user_prompt = build_user_prompt(self.data, st.unit, st.target_low, st.target_high, st.ai_hours)
+        user_prompt = build_user_prompt(self.data, st.unit, st.target_low, st.target_high, st.ai_hours,
+                                        urgent_low=st.urgent_low, urgent_high=st.urgent_high,
+                                        stale_minutes=st.stale_minutes)
         key = get_secret(ai_key_name(st.ai_provider))
         system = system_prompt()
         if dialog:
-            dialog.set_context(m, st.unit, st.ai_hours, info.name, model)
+            dialog.set_context(m, st.unit, shown_hours, info.name, model)
             dialog.show_loading()
         self.analysis_running = True
 
@@ -492,7 +497,7 @@ class Controller(QObject):
             self.analysis_running = False
             self.last_analysis = text
             if self.analysis_dialog:
-                self.analysis_dialog.set_context(m, st.unit, st.ai_hours, info.name, model)
+                self.analysis_dialog.set_context(m, st.unit, shown_hours, info.name, model)
                 self.analysis_dialog.show_result(text)
             if auto and self.tray and not (self.analysis_dialog and self.analysis_dialog.isVisible()):
                 self.tray.showMessage(tr("New analysis available"), tr("Click to see the analysis of your readings."),
